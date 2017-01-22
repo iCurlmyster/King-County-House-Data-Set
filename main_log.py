@@ -32,6 +32,10 @@ def split_data(data, ratio):
 # get our sets; test set is 20% of data
 train_set, test_set = split_data(init_data, 0.2)
 
+
+import matplotlib.pyplot as plt
+
+
 ## use pandas scatter matrix plot to get a better idea of data
 ## wrote down thoughts in data_processing.txt
 #from pandas.tools.plotting import scatter_matrix
@@ -40,12 +44,22 @@ train_set, test_set = split_data(init_data, 0.2)
 attr = ["price", "sqft_living", "grade", "sqft_above", "sqft_living15"]
 #scatter_matrix(init_data[attr], figsize=(20,8) )
 
+
+# resize data 
+#train_set = train_set.assign(sqft_living=(train_set["sqft_living"] / 10000))
+#train_set = train_set.assign(sqft_lot=(train_set["sqft_lot"] / 10000))
+#train_set = train_set.assign(sqft_above=(train_set["sqft_above"] / 100))
+#train_set = train_set.assign(sqft_basement=(train_set["sqft_basement"] / 100))
+#train_set = train_set.assign(sqft_living15=(train_set["sqft_living15"] / 100))
+#train_set = train_set.assign(sqft_lot15=(train_set["sqft_lot15"] / 10000))
+
+
 ## separate the data and the labels
-#data = (train_set.drop("price", axis=1)).values
+data = (train_set.drop("price", axis=1)).values
 ## needed to divide the numbers into smaller values so when working
 ## with the data it doesn't overflow and cause a 'nan'
-data = (train_set["sqft_living"].copy()).values / 100000
-data_labels = (train_set["price"].copy()).values / 1000
+data_labels = (train_set["price"].copy()).values  #/ 100
+data_labels = data_labels.reshape([len(data_labels),1])
 # reshape for tensorflow model
 #data_labels = data_labels.reshape((len(data_labels), 1) )
 
@@ -59,21 +73,44 @@ n_samples = data.shape[0]
 #W = tf.Variable(tf.random_normal([18,1], dtype=tf.float64))
 #b = tf.Variable(tf.zeros([1], dtype=tf.float64))
 
-X = tf.placeholder(tf.float32)
-Y = tf.placeholder(tf.float32)
+X = tf.placeholder(tf.float32, [None, 18])
+Y = tf.placeholder(tf.float32, [None, 1])
 
-W = tf.Variable(rng.randn())
-b = tf.Variable(rng.randn())
+## calculate mean
+x_mean = tf.reduce_mean(X)
+y_mean = tf.reduce_mean(Y)
 
-pred = tf.add(tf.mul(X,W), b)
+## Making the input have a mean of 0
+X = tf.subtract(X, x_mean)
+Y = tf.subtract(Y, y_mean)
 
-two = tf.constant(2.0)
-eight = tf.constant(n_samples, dtype=tf.float32)
+n_samples = tf.constant(n_samples, dtype=tf.float32)
 
-cost = tf.reduce_sum( tf.pow(tf.subtract(pred, Y), 2)) / tf.mul(two, eight)
-#cost = -cost
+## calculate variance
+x_variance = tf.reduce_sum(tf.pow(tf.subtract(X, x_mean), 2)) / tf.subtract(n_samples, 1.0)
+y_variance = tf.reduce_sum(tf.pow(tf.subtract(Y, y_mean), 2)) / tf.subtract(n_samples, 1.0)
 
-optimizer = tf.train.GradientDescentOptimizer(0.1).minimize(cost)
+## Making the input have a variance of 1
+X = X / tf.sqrt(x_variance)
+Y = Y / tf.sqrt(y_variance)
+
+W = tf.Variable(tf.random_normal([18,1]))
+b = tf.Variable(tf.random_normal([1]))
+
+pred = tf.add(tf.matmul(X,W), b)
+
+#two = tf.constant(2.0)
+#eight = tf.constant(n_samples, dtype=tf.float32)
+
+abs_val = tf.abs(tf.subtract(pred, Y))
+
+#cost = tf.reduce_sum( tf.abs(tf.subtract(pred, Y))) / tf.mul(two, eight)
+cost = tf.reduce_mean(abs_val)
+#cost = -tf.reduce_sum(tf.log(pred), reduction_indices=1)
+
+
+## Learning rate was the problem, it needed to be to the 0.00001 degree
+optimizer = tf.train.GradientDescentOptimizer(0.00001).minimize(cost)
 
 init = tf.global_variables_initializer()
 
@@ -91,7 +128,7 @@ import math
 #dl_val = []
 
 print("training...")
-for epoch in range(10000):
+for epoch in range(15000): 
     #tmp_d = data[i] #.reshape((1, 18))
     #d_val.append(tmp_d)
     #tmp_dl = data_labels[i] #.reshape((1,1))
@@ -99,11 +136,8 @@ for epoch in range(10000):
     sess.run(optimizer, feed_dict={X:data, Y:data_labels})
     #error.append(c)
     if (epoch+1) % 50 == 0:
-        c = sess.run(cost, feed_dict={X:data, Y:data_labels})
-        print("Epoch: {0} cost: {1:.9f} W: {2} b: {3}\r".format(epoch, c, sess.run(W), sess.run(b)))
-        if math.isnan(c):
-            print("break")
-            break
+        c, a = sess.run([cost, abs_val], feed_dict={X:data, Y:data_labels})
+        print("Epoch: {0} cost: {1} abs:{2} W: {3} b: {4}".format(epoch, c, a, sess.run(W), sess.run(b)))
 
 
 print("Training done!")
@@ -112,7 +146,14 @@ print("Final cost: {0} final weights: {1} final biases: {2}".format(training, se
 
 
 print("Testing..")
-print("h(35)={0}; y(35)={1}".format(sess.run(pred,feed_dict={X:data[35]}), data_labels[35] ))
+print("h(35)={0}; y(35)={1}".format(sess.run(pred,feed_dict={X:data[35].reshape([1,18])}), data_labels[35].reshape([1,1]) ))
+
+
+import matplotlib.pyplot as plt
+
+pred_data = sess.run(pred, feed_dict={X:data})
+
+
 
 sess.close()
 
@@ -130,13 +171,5 @@ sess.close()
 #    training = sess.run(cost, feed_dict={X:data, Y:data_labels})
 #    print("Final cost: {0} final weights: {1} final biases: {2}".format(training, sess.run(W), sess.run(b)) )
 #
-
-
-
-
-
-
-
-
 
 
