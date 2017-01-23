@@ -75,6 +75,8 @@ n_samples = data.shape[0]
 X = tf.placeholder(tf.float32, [None, 18])
 Y = tf.placeholder(tf.float32, [None, 1])
 
+
+##!! this is calulating mean for all of data, need to do to each column !! 
 ## calculate mean
 x_mean = tf.reduce_mean(X)
 y_mean = tf.reduce_mean(Y)
