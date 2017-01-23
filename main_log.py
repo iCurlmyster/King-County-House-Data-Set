@@ -32,10 +32,6 @@ def split_data(data, ratio):
 # get our sets; test set is 20% of data
 train_set, test_set = split_data(init_data, 0.2)
 
-
-import matplotlib.pyplot as plt
-
-
 ## use pandas scatter matrix plot to get a better idea of data
 ## wrote down thoughts in data_processing.txt
 #from pandas.tools.plotting import scatter_matrix
@@ -121,23 +117,14 @@ sess = tf.Session()
 sess.run(init)
 
 import math
-#from tqdm import *
-
-#error = []
-#d_val = []
-#dl_val = []
+from tqdm import *
 
 print("training...")
-for epoch in range(15000): 
-    #tmp_d = data[i] #.reshape((1, 18))
-    #d_val.append(tmp_d)
-    #tmp_dl = data_labels[i] #.reshape((1,1))
-    #dl_val.append(tmp_dl)
+for epoch in tqdm(range(25000)): 
     sess.run(optimizer, feed_dict={X:data, Y:data_labels})
-    #error.append(c)
-    if (epoch+1) % 50 == 0:
-        c, a = sess.run([cost, abs_val], feed_dict={X:data, Y:data_labels})
-        print("Epoch: {0} cost: {1} abs:{2} W: {3} b: {4}".format(epoch, c, a, sess.run(W), sess.run(b)))
+    if (epoch+1) % 5000 == 0:
+        c = sess.run(cost, feed_dict={X:data, Y:data_labels})
+        print("Epoch: {0} cost: {1} W: {2} b: {3}".format(epoch, c, sess.run(W), sess.run(b)))
 
 
 print("Training done!")
@@ -152,7 +139,9 @@ print("h(35)={0}; y(35)={1}".format(sess.run(pred,feed_dict={X:data[35].reshape(
 import matplotlib.pyplot as plt
 
 pred_data = sess.run(pred, feed_dict={X:data})
-
+plt.plot(data_labels, "go")
+plt.plot(pred_data,"bo")
+plt.show()
 
 
 sess.close()
