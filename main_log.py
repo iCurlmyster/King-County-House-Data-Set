@@ -3,6 +3,9 @@ import pandas as pd
 import numpy as np
 
 
+np.random.seed(7)
+tf.set_random_seed(7)
+
 init_data = pd.read_csv("./kc_house_data.csv")
 
 print("Cols: {0}".format(list(init_data)) )
@@ -139,10 +142,18 @@ print("h(35)={0}; y(35)={1}".format(sess.run(pred,feed_dict={X:data[35].reshape(
 import matplotlib.pyplot as plt
 
 pred_data = sess.run(pred, feed_dict={X:data})
-plt.plot(data_labels, "go")
+plt.plot(sess.run(Y, feed_dict={Y:data_labels}), "go")
 plt.plot(pred_data,"bo")
 plt.show()
 
+
+#print("Trying Test data..")
+#test_data = (test_set.drop("price", axis=1)).values()
+#test_data_labels = (test_set["price"].copy()).values()
+#test_pred = sess.run(pred, feed_dict={X:test_data})
+
+#plt.plot(sess.run(Y, feed_dict={Y:test_data_labels}), "bo")
+#plt.plot(test_pred, "go")
 
 sess.close()
 
