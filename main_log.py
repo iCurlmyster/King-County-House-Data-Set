@@ -76,24 +76,24 @@ X = tf.placeholder(tf.float32, [None, 18])
 Y = tf.placeholder(tf.float32, [None, 1])
 
 
-##!! this is calulating mean for all of data, need to do to each column !! 
-## calculate mean
-x_mean = tf.reduce_mean(X)
-y_mean = tf.reduce_mean(Y)
+## calculate mean on the column axis for each column. and I am keeping its deminsions
+x_mean = tf.reduce_mean(X, 0, True)
+y_mean = tf.reduce_mean(Y, 0, True)
 
-## Making the input have a mean of 0
+## Making the input have a mean of 0.
+## This is elementwise so it will perform on the correct columns for each row.
 X = tf.subtract(X, x_mean)
 Y = tf.subtract(Y, y_mean)
 
 n_samples = tf.constant(n_samples, dtype=tf.float32)
 
-## calculate variance
-x_variance = tf.reduce_sum(tf.pow(tf.subtract(X, x_mean), 2)) / tf.subtract(n_samples, 1.0)
-y_variance = tf.reduce_sum(tf.pow(tf.subtract(Y, y_mean), 2)) / tf.subtract(n_samples, 1.0)
+## calculate variance. tf.div performs elementwise. also reduce_sum on column axis and keeping deminsions
+x_variance = tf.div(tf.reduce_sum(tf.pow(tf.subtract(X, x_mean), 2), 0, True), tf.subtract(n_samples, 1.0))
+y_variance = tf.div(tf.reduce_sum(tf.pow(tf.subtract(Y, y_mean), 2), 0, True), tf.subtract(n_samples, 1.0))
 
 ## Making the input have a variance of 1
-X = X / tf.sqrt(x_variance)
-Y = Y / tf.sqrt(y_variance)
+X = tf.div(X, tf.sqrt(x_variance))
+Y = tf.div(Y, tf.sqrt(y_variance))
 
 W = tf.Variable(tf.random_normal([18,1]))
 b = tf.Variable(tf.random_normal([1]))
