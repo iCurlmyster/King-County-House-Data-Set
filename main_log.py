@@ -100,15 +100,14 @@ b = tf.Variable(tf.random_normal([1]))
 
 pred = tf.add(tf.matmul(X,W), b)
 
-#two = tf.constant(2.0)
-#eight = tf.constant(n_samples, dtype=tf.float32)
+
+ss_e = tf.reduce_sum(tf.pow(tf.subtract(Y, pred), 2))
+ss_t = tf.reduce_sum(tf.pow(tf.subtract(Y, y_mean), 2))
+r2 = tf.subtract(1.0, tf.div(ss_e, ss_t))
 
 abs_val = tf.abs(tf.subtract(pred, Y))
 
-#cost = tf.reduce_sum( tf.abs(tf.subtract(pred, Y))) / tf.mul(two, eight)
 cost = tf.reduce_mean(abs_val)
-#cost = -tf.reduce_sum(tf.log(pred), reduction_indices=1)
-
 
 ## Learning rate was the problem, it needed to be to the 0.00001 degree
 optimizer = tf.train.GradientDescentOptimizer(0.00001).minimize(cost)
@@ -124,11 +123,13 @@ sess.run(init)
 import math
 from tqdm import *
 
+loss_values = []
+
 print("training...")
 for epoch in tqdm(range(25000)): 
-    sess.run(optimizer, feed_dict={X:data, Y:data_labels})
+    _, c = sess.run([optimizer, cost], feed_dict={X:data, Y:data_labels})
+    loss_values.append(c)
     if (epoch+1) % 5000 == 0:
-        c = sess.run(cost, feed_dict={X:data, Y:data_labels})
         print("Epoch: {0} cost: {1} W: {2} b: {3}".format(epoch, c, sess.run(W), sess.run(b)))
 
 
@@ -143,9 +144,15 @@ print("h(35)={0}; y(35)={1}".format(sess.run(pred,feed_dict={X:data[35].reshape(
 
 import matplotlib.pyplot as plt
 
-pred_data = sess.run(pred, feed_dict={X:data})
-plt.plot(sess.run(Y, feed_dict={Y:data_labels}), "go")
-plt.plot(pred_data,"bo")
+#pred_data = sess.run(pred, feed_dict={X:data})
+#plt.plot(sess.run(Y, feed_dict={Y:data_labels}), "go")
+#plt.plot(pred_data,"bo")
+
+#print("R^2 value: {0}".format(sess.run(r2,feed_dict={X:data, Y:data_labels})) )
+
+plt.plot(c)
+
+
 plt.show()
 
 
@@ -158,20 +165,4 @@ plt.show()
 #plt.plot(test_pred, "go")
 
 sess.close()
-
-#with tf.Session() as sess:
-#    sess.run(init)
-#    for epoch in range(1000):
-#        for (x, y) in zip(data, data_labels):
-#            sess.run(optimizer, feed_dict={X:x, Y:y})
-#        if (epoch+1) % 50 == 0:
-#            c = sess.run(cost, feed_dict={X:data, Y:data_labels})
-#            print("Epoch: {0:.9f} cost: {1} W: {2} b: {3}".format(epoch, c, sess.run(W), sess.run(b)))
-#    
-#    
-#    print("Training done!")
-#    training = sess.run(cost, feed_dict={X:data, Y:data_labels})
-#    print("Final cost: {0} final weights: {1} final biases: {2}".format(training, sess.run(W), sess.run(b)) )
-#
-
 
