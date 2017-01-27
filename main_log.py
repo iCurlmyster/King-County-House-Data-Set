@@ -62,8 +62,6 @@ data_labels = data_labels.reshape([len(data_labels),1])
 # reshape for tensorflow model
 #data_labels = data_labels.reshape((len(data_labels), 1) )
 
-rng = np.random
-
 n_samples = data.shape[0]
 
 #X = tf.placeholder(tf.float64,[None, 18])
@@ -72,45 +70,54 @@ n_samples = data.shape[0]
 #W = tf.Variable(tf.random_normal([18,1], dtype=tf.float64))
 #b = tf.Variable(tf.zeros([1], dtype=tf.float64))
 
-X = tf.placeholder(tf.float32, [None, 18])
-Y = tf.placeholder(tf.float32, [None, 1])
+X_init = tf.placeholder(tf.float32, [None, 18])
+Y_init = tf.placeholder(tf.float32, [None, 1])
 
 
 ## calculate mean on the column axis for each column. and I am keeping its deminsions
-x_mean = tf.reduce_mean(X, 0, True)
-y_mean = tf.reduce_mean(Y, 0, True)
+x_mean = tf.reduce_mean(X_init, 0, True)
+y_mean = tf.reduce_mean(Y_init, 0, True)
 
 ## Making the input have a mean of 0.
 ## This is elementwise so it will perform on the correct columns for each row.
-X = tf.subtract(X, x_mean)
-Y = tf.subtract(Y, y_mean)
+X_mz = tf.subtract(X_init, x_mean)
+Y_mz = tf.subtract(Y_init, y_mean)
 
 n_samples = tf.constant(n_samples, dtype=tf.float32)
 
 ## calculate variance. tf.div performs elementwise. also reduce_sum on column axis and keeping deminsions
-x_variance = tf.div(tf.reduce_sum(tf.pow(tf.subtract(X, x_mean), 2), 0, True), tf.subtract(n_samples, 1.0))
-y_variance = tf.div(tf.reduce_sum(tf.pow(tf.subtract(Y, y_mean), 2), 0, True), tf.subtract(n_samples, 1.0))
+x_variance = tf.div(tf.reduce_sum(tf.pow(tf.subtract(X_mz, x_mean), 2), 0, True), tf.subtract(n_samples, 1.0))
+y_variance = tf.div(tf.reduce_sum(tf.pow(tf.subtract(Y_mz, y_mean), 2), 0, True), tf.subtract(n_samples, 1.0))
 
 ## Making the input have a variance of 1
-X = tf.div(X, tf.sqrt(x_variance))
-Y = tf.div(Y, tf.sqrt(y_variance))
+X = tf.div(X_mz, tf.sqrt(x_variance))
+Y = tf.div(Y_mz, tf.sqrt(y_variance))
 
 W = tf.Variable(tf.random_normal([18,1]))
 b = tf.Variable(tf.random_normal([1]))
 
 pred = tf.add(tf.matmul(X,W), b)
 
+adjusted_pred = tf.add(tf.multiply(pred, tf.sqrt(y_variance)), y_mean)
 
-ss_e = tf.reduce_sum(tf.pow(tf.subtract(Y, pred), 2))
-ss_t = tf.reduce_sum(tf.pow(tf.subtract(Y, y_mean), 2))
+adjusted_Y = tf.add(tf.multiply(Y, tf.sqrt(y_variance)), y_mean) 
+
+ss_e = tf.reduce_sum(tf.pow(tf.subtract(adjusted_Y, adjusted_pred), 2))
+ss_t = tf.reduce_sum(tf.pow(tf.subtract(adjusted_Y, y_mean), 2))
 r2 = tf.subtract(1.0, tf.div(ss_e, ss_t))
 
-abs_val = tf.abs(tf.subtract(pred, Y))
+pow_val = tf.pow(tf.subtract(pred, Y),2)
 
-cost = tf.reduce_mean(abs_val)
+cost = tf.reduce_mean(pow_val)
+
+
+## adjusted values never would drop in cost. bounced around too much even with really low learning rate
+#adjusted_cost = tf.reduce_mean(tf.pow(tf.subtract(adjusted_pred, adjusted_Y), 2) )
 
 ## Learning rate was the problem, it needed to be to the 0.00001 degree
 optimizer = tf.train.GradientDescentOptimizer(0.00001).minimize(cost)
+
+#adjusted_optimizer = tf.train.GradientDescentOptimizer(0.000005).minimize(adjusted_cost)
 
 init = tf.global_variables_initializer()
 
@@ -126,43 +133,58 @@ from tqdm import *
 loss_values = []
 
 print("training...")
-for epoch in tqdm(range(25000)): 
-    _, c = sess.run([optimizer, cost], feed_dict={X:data, Y:data_labels})
+for epoch in tqdm(range(40000)): 
+    _, c = sess.run([optimizer, cost], feed_dict={X_init:data, Y_init:data_labels})
     loss_values.append(c)
     if (epoch+1) % 5000 == 0:
         print("Epoch: {0} cost: {1} W: {2} b: {3}".format(epoch, c, sess.run(W), sess.run(b)))
 
 
+saver = tf.train.Saver()
+save_path = saver.save(sess, "./multi_linear_model.ckpt")
+print("Model saved in file: {0}".format(save_path))
+
+## load in from saved model
+# with tf.Session as sess:
+#  saver = tf.train.import_meta_graph("./multi_linear_model.ckpt.meta")
+#  saver.restore(sess, "./multi_linear_model.ckpt")
+
+
 print("Training done!")
-training = sess.run(cost, feed_dict={X:data, Y:data_labels})
+training = sess.run(cost, feed_dict={X_init:data, Y_init:data_labels})
 print("Final cost: {0} final weights: {1} final biases: {2}".format(training, sess.run(W), sess.run(b)) )
 
 
-print("Testing..")
-print("h(35)={0}; y(35)={1}".format(sess.run(pred,feed_dict={X:data[35].reshape([1,18])}), data_labels[35].reshape([1,1]) ))
+#print("Testing..")
+#print("h(35)={0}; y(35)={1}".format(sess.run(pred,feed_dict={X_init:data[35].reshape([1,18])}), data_labels[35].reshape([1,1]) ))
 
 
 import matplotlib.pyplot as plt
 
-#pred_data = sess.run(pred, feed_dict={X:data})
-#plt.plot(sess.run(Y, feed_dict={Y:data_labels}), "go")
-#plt.plot(pred_data,"bo")
+pred_data = sess.run(pred, feed_dict={X_init:data})
+plt.figure(1)
+plt.title("Y vs Y-hat")
+plt.plot(sess.run(Y, feed_dict={Y_init:data_labels}), "go")
+plt.plot(pred_data,"bo")
 
-#print("R^2 value: {0}".format(sess.run(r2,feed_dict={X:data, Y:data_labels})) )
-
-plt.plot(c)
+print("R^2 value: {0}".format(sess.run(r2,feed_dict={X_init:data, Y_init:data_labels})) )
+plt.figure(2)
+plt.title("Cost values")
+plt.plot(loss_values)
 
 
 plt.show()
 
 
-#print("Trying Test data..")
-#test_data = (test_set.drop("price", axis=1)).values()
-#test_data_labels = (test_set["price"].copy()).values()
-#test_pred = sess.run(pred, feed_dict={X:test_data})
+print("Trying Test data..")
+test_data = (test_set.drop("price", axis=1)).values()
+test_data_labels = (test_set["price"].copy()).values()
+test_pred = sess.run(pred, feed_dict={X_init:test_data})
 
-#plt.plot(sess.run(Y, feed_dict={Y:test_data_labels}), "bo")
-#plt.plot(test_pred, "go")
+plt.figure(3)
+plt.title("Test data Y vs Y-hat")
+plt.plot(sess.run(Y, feed_dict={Y_init:test_data_labels}), "bo")
+plt.plot(test_pred, "go")
 
 sess.close()
 
