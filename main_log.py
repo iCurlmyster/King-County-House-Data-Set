@@ -10,14 +10,13 @@ init_data = pd.read_csv("./kc_house_data.csv")
 
 print("Cols: {0}".format(list(init_data)) )
 
+## we see that there is no missing data from any of the remaining attributes to deal with
+print(init_data.info())
+
 ## get rid of useless ID attribute
 init_data = init_data.drop("id", axis=1)
 ## get rid of date attribute because I don't want to deal with objects
 init_data = init_data.drop("date", axis=1)
-
-## we see that thtere is no missing data from any of the remaining attributes to deal with
-print(init_data.info())
-
 
 ## show the correlation of the attributes against the price attribute
 ## to see what features are most important to look at.
@@ -40,7 +39,7 @@ train_set, test_set = split_data(init_data, 0.2)
 #from pandas.tools.plotting import scatter_matrix
 
 ## attributes to look at
-attr = ["price", "sqft_living", "grade", "sqft_above", "sqft_living15"]
+#attr = ["price", "sqft_living", "grade", "sqft_above", "sqft_living15"]
 #scatter_matrix(init_data[attr], figsize=(20,8) )
 
 
