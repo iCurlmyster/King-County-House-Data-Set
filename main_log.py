@@ -13,6 +13,9 @@ print("Cols: {0}".format(list(init_data)) )
 ## we see that there is no missing data from any of the remaining attributes to deal with
 print(init_data.info())
 
+
+## TODO experiment with dropping more low correlated columns
+
 ## get rid of useless ID attribute
 init_data = init_data.drop("id", axis=1)
 ## get rid of date attribute because I don't want to deal with objects
@@ -184,14 +187,20 @@ plt.show()
 
 
 print("Trying Test data..")
-test_data = (test_set.drop("price", axis=1)).values()
-test_data_labels = (test_set["price"].copy()).values()
-test_pred = sess.run(pred, feed_dict={X_init:test_data})
+test_data = (test_set.drop("price", axis=1)).values
+test_data_labels = (test_set["price"].copy()).values
+test_pred = sess.run(true_pred, feed_dict={X_init:test_data})
+
+rmse = np.sqrt(np.mean(np.power(np.subtract(test_pred, test_data_labels), 2)))
+print("rmse of pred_data and std_y_data is: {0}".format(rmse))
+
 
 plt.figure(3)
 plt.title("Test data Y vs Y-hat")
-plt.plot(sess.run(Y, feed_dict={Y_init:test_data_labels}), "bo")
+plt.plot(test_data_labels, "bo")
 plt.plot(test_pred, "go")
+
+plt.show()
 
 sess.close()
 
