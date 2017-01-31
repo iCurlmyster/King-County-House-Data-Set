@@ -110,6 +110,7 @@ pow_val = tf.pow(tf.subtract(pred, Y),2)
 
 cost = tf.reduce_mean(pow_val)
 
+true_pred = tf.add(tf.matmul(X_init, W), b)
 
 ## adjusted values never would drop in cost. bounced around too much even with really low learning rate
 #adjusted_cost = tf.reduce_mean(tf.pow(tf.subtract(adjusted_pred, adjusted_Y), 2) )
@@ -155,16 +156,23 @@ training = sess.run(cost, feed_dict={X_init:data, Y_init:data_labels})
 print("Final cost: {0} final weights: {1} final biases: {2}".format(training, sess.run(W), sess.run(b)) )
 
 
-#print("Testing..")
-#print("h(35)={0}; y(35)={1}".format(sess.run(pred,feed_dict={X_init:data[35].reshape([1,18])}), data_labels[35].reshape([1,1]) ))
+print("Testing..")
+print("h(35)={0}; y(35)={1}".format(sess.run(true_pred,feed_dict={X_init:data[35].reshape([1,18])}), data_labels[35].reshape([1,1]) ))
+
+
+pred_data = sess.run(true_pred, feed_dict={X_init:data})
+
+std_y_data = data_labels  #sess.run(Y, feed_dict={Y_init:data_labels})
+
+rmse = np.sqrt(np.mean(np.power(np.subtract(pred_data, std_y_data), 2)))
+print("rmse of pred_data and std_y_data is: {0}".format(rmse))
 
 
 import matplotlib.pyplot as plt
 
-pred_data = sess.run(pred, feed_dict={X_init:data})
 plt.figure(1)
 plt.title("Y vs Y-hat")
-plt.plot(sess.run(Y, feed_dict={Y_init:data_labels}), "go")
+plt.plot(std_y_data, "go")
 plt.plot(pred_data,"bo")
 
 print("R^2 value: {0}".format(sess.run(r2,feed_dict={X_init:data, Y_init:data_labels})) )
