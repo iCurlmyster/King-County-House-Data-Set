@@ -23,6 +23,7 @@ print(init_data.info())
 init_data = init_data.drop("id", axis=1)
 ## get rid of date attribute because I don't want to deal with objects
 init_data = init_data.drop("date", axis=1)
+init_data = init_data.drop("zipcode", axis=1)
 
 ### TRYING drop more, less significant data, see what happens
 
@@ -35,6 +36,11 @@ init_data = init_data.drop("date", axis=1)
 #init_data = init_data.drop("sqft_lot", axis=1)
 #init_data = init_data.drop("yr_renovated", axis=1)
 #init_data = init_data.drop("lat", axis=1)
+#init_data = init_data.drop("floors", axis=1)
+#init_data = init_data.drop("waterfront", axis=1)
+#init_data = init_data.drop("bedrooms", axis=1)
+
+
 
 ###
 
@@ -135,11 +141,14 @@ if is_adjusted:
     ss_t = tf.reduce_sum(tf.pow(tf.subtract(Y_init, y_mean), 2))
 r2 = tf.subtract(1.0, tf.div(ss_e, ss_t))
 
+adjusted_r2 = tf.subtract(1.0, tf.div(tf.div(ss_e, (n_samples - 1.0)), tf.div(ss_t, (n_samples - num_features - 1)) ) )
+
 ## adjusted values never would drop in cost. bounced around too much even with really low learning rate
 #adjusted_cost = tf.reduce_mean(tf.pow(tf.subtract(adjusted_pred, adjusted_Y), 2) )
 
 ## Learning rate was the problem, it needed to be to the 0.00001 degree
-optimizer = tf.train.GradientDescentOptimizer(0.01).minimize(cost)
+#optimizer = tf.train.GradientDescentOptimizer(0.01).minimize(cost)
+optimizer = tf.train.AdamOptimizer(1e-1).minimize(cost)
 
 #adjusted_optimizer = tf.train.GradientDescentOptimizer(0.000005).minimize(adjusted_cost)
 
@@ -158,10 +167,11 @@ import math
 loss_values = []
 
 print("training...")
-for epoch in range(10000): 
+num_epochs = 1000
+for epoch in range(num_epochs): 
     _, c = sess.run([optimizer, cost], feed_dict={X_init:data, Y_init:data_labels})
     loss_values.append(c)
-    sys.stdout.write("Epoch: {0}/10000 cost: {1}\r".format(epoch, c))
+    sys.stdout.write("Epoch: {0}/{1} cost: {2}\r".format(epoch+1, num_epochs, c))
     sys.stdout.flush()
 
 save_path = saver.save(sess, "./multi_linear_model.ckpt")
@@ -191,13 +201,13 @@ import matplotlib.pyplot as plt
 plt.figure(1)
 plt.title("Cost values")
 plt.plot(loss_values)
-plt.show()
 
 plt.figure(2)
 plt.title("Y vs Y-hat")
 plt.plot(std_y_data, "go")
 plt.plot(pred_data,"bo")
 print("R^2 value: {0}".format(sess.run(r2,feed_dict={X_init:data, Y_init:data_labels})) )
+print("Adjusted R^2 value: {0}".format(sess.run(adjusted_r2, feed_dict={X_init:data, Y_init:data_labels})))
 print("Trying Test data..")
 test_data = (test_set.drop("price", axis=1)).values
 test_data_labels = (test_set["price"].copy()).values
