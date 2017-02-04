@@ -39,6 +39,8 @@ init_data = init_data.drop("zipcode", axis=1)
 #init_data = init_data.drop("floors", axis=1)
 #init_data = init_data.drop("waterfront", axis=1)
 #init_data = init_data.drop("bedrooms", axis=1)
+#init_data = init_data.drop("view", axis=1)
+#init_data = init_data.drop("sqft_basement", axis=1)
 
 
 
@@ -145,7 +147,6 @@ adjusted_r2 = tf.subtract(1.0, tf.div(tf.div(ss_e, (n_samples - 1.0)), tf.div(ss
 
 ## adjusted values never would drop in cost. bounced around too much even with really low learning rate
 #adjusted_cost = tf.reduce_mean(tf.pow(tf.subtract(adjusted_pred, adjusted_Y), 2) )
-
 ## Learning rate was the problem, it needed to be to the 0.00001 degree
 #optimizer = tf.train.GradientDescentOptimizer(0.01).minimize(cost)
 optimizer = tf.train.AdamOptimizer(1e-1).minimize(cost)
@@ -194,7 +195,8 @@ if is_adjusted:
 std_y_data = sess.run(Y, feed_dict={Y_init:data_labels}) 
 if is_adjusted:
     std_y_data = data_labels
-rmse = np.sqrt(np.mean(np.power(np.subtract(pred_data, std_y_data), 2)))
+rmse = np.sqrt(np.mean(np.power(np.subtract(pred_data, std_y_data), 2) ))
+
 print("rmse of pred_data and std_y_data is: {0}".format(rmse))
 
 import matplotlib.pyplot as plt
@@ -217,7 +219,7 @@ if is_adjusted:
     test_pred = sess.run(adjusted_pred, feed_dict={X_init:test_data, Y_init:test_data_labels})
 if not is_adjusted:
     test_data_labels = sess.run(Y, feed_dict={Y_init:test_data_labels})
-rmse = np.sqrt(np.mean(np.power(np.subtract(test_pred, test_data_labels), 2)))
+rmse = np.sqrt(np.mean(np.power(np.subtract(test_pred, test_data_labels), 2) ))
 print("rmse of test_data and test_data_labels is: {0}".format(rmse))
 plt.figure(3)
 plt.title("Test data Y vs Y-hat")

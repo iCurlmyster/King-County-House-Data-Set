@@ -1,7 +1,7 @@
 
 # Exploring King County, USA Housing Data
 
-In this notebook we will be exploring the King County, USA Housing data set and seeing how well we can get a multivariate linear model to predict the housing prices. The data set can be found [here](https://www.kaggle.com/harlfoxem/housesalesprediction). To tackle this problem we will be using the tensorflow, pandas, and numpy libraries. We are also using sys for outputing results.
+In this notebook we will be exploring the King County, USA Housing data set and seeing how well we can get a simple multiple linear regression model to predict the housing prices. The data set can be found [here](https://www.kaggle.com/harlfoxem/housesalesprediction). To tackle this problem we will be using the tensorflow, pandas, and numpy libraries. We are also using sys for outputing results.
 
 
 ```python
@@ -98,7 +98,7 @@ print(matrix_corr["price"].sort_values(ascending=False))
     Name: price, dtype: float64
 
 
-The first five features under "price" seem to show rather strong correlation, with "zipcode" being the only negative correlating feature. We might want to experiment with seeing which features are the best to remove but for right now I will just remove "zipcode" and test the rest of the features.
+As we can see we have quite a few strong correlated features, with "zipcode" being the only negative correlating feature. We might want to experiment with seeing which features are the best to remove but for right now we will just remove "zipcode" and test the rest of the features.
 
 
 ```python
@@ -113,42 +113,11 @@ from pandas.tools.plotting import scatter_matrix
 %matplotlib inline
 ## attributes to look at
 attr = ["price", "sqft_living", "grade", "sqft_above", "sqft_living15"]
-scatter_matrix(init_data[attr], figsize=(20,8) )
+scatter_matrix(init_data[attr], figsize=(20,8) );
 ```
 
 
-
-
-    array([[<matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c812358>,
-            <matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c7f14e0>,
-            <matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c7bf9e8>,
-            <matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c77e320>,
-            <matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c744dd8>],
-           [<matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c687160>,
-            <matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c650d30>,
-            <matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c60ac50>,
-            <matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c5d5ba8>,
-            <matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c590a90>],
-           [<matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c55fcc0>,
-            <matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c52e1d0>,
-            <matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c4e98d0>,
-            <matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c4b73c8>,
-            <matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c469da0>],
-           [<matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c43a208>,
-            <matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c3f4be0>,
-            <matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c3bdf28>,
-            <matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c360550>,
-            <matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c2c7c50>],
-           [<matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c297198>,
-            <matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c2536d8>,
-            <matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c21bdd8>,
-            <matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c1dd4e0>,
-            <matplotlib.axes._subplots.AxesSubplot object at 0x7f2e4c1a5630>]], dtype=object)
-
-
-
-
-![png](output_14_1.png)
+![png](output_14_0.png)
 
 
 As we can see, it seems there are some possible outliers to worry about. So what we will do is standardize the data when we create our model so that we won't have to worry about this possible problem as much.
@@ -252,9 +221,11 @@ We are going to define our for loop to iterate through 1000 epochs. We will also
 
 
 ```python
+cost_values = []
 num_epochs = 1000
 for epoch in range(num_epochs): 
     _, c = sess.run([optimizer, cost], feed_dict={X_init:data, Y_init:data_labels})
+    cost_values.append(c)
     sys.stdout.write("Epoch: {0}/{1} cost: {2}\r".format(epoch+1, num_epochs, c))
     sys.stdout.flush()
 ```
@@ -288,7 +259,21 @@ print("Final cost: {0} final weights: {1} final biases: {2}".format(training, se
      [ -1.64874736e-02]] final biases: [-0.00018113]
 
 
-To see how well we did, we need to compute the $R^2$ to see how well our model explains the data, the Root Mean Squared Error(RMSE) to tell us standard deviation of our data, and the Adjusted $R^2$ function to make sure the regular $R^2$ function is not being influenced by the high number of features we have in our model. The R^2 formula that I am using is $R^2 = 1 - \frac{SS_{res}}{SS_{tot}}$
+Lets also look at our cost function values graphically.
+
+
+```python
+import matplotlib.pyplot as plt
+plt.figure(1)
+plt.title("Cost values")
+plt.plot(cost_values);
+```
+
+
+![png](output_39_0.png)
+
+
+To see how well we did, we need to compute the $R^2$ to see how well our model explains the data, the Root Mean Squared Error(RMSE) to tell us standard deviation of our predicted values vs. the actual values, and the Adjusted $R^2$ function to make sure the regular $R^2$ function is not being influenced by the high number of features we have in our model. The R^2 formula that I am using is $R^2 = 1 - \frac{SS_{res}}{SS_{tot}}$
 
 
 ```python
@@ -319,7 +304,7 @@ print("Adjusted R^2 value: {0}".format(sess.run(adjusted_r2, feed_dict={X_init:d
     Adjusted R^2 value: 0.6994574069976807
 
 
-As we can see we have a RMSE of ~0.30, $R^2$ of ~0.70, and Adjusted $R^2$ of ~0.70 with our simple multivariate linear model. 
+As we can see we have a RMSE of ~0.31, $R^2$ of ~0.70, and Adjusted $R^2$ of ~0.70 with our simple multiple linear regression model. 
 
 Now lets see how well our model can predict our test data by comparing RMSE values.
 
@@ -345,4 +330,4 @@ sess.close()
     RMSE difference: 0.3254762887954712
 
 
-So it looks like our data seems to be overfitting on the training set a little too much. Which means our model can't be used to predict new data as well as we would like. However, this is pretty good for a simple model.
+So it looks like our model is not as good at predicting values for the test data set, which indicates we are likely overfitting. However, this is pretty good for a simple model.
