@@ -115,12 +115,11 @@ b = tf.Variable(tf.random_normal([1]))
 
 pred = tf.add(tf.matmul(X,W), b)
 
-adjusted_pred = tf.add(tf.multiply(pred, tf.sqrt(y_variance)), y_mean)
-
-adjusted_Y = tf.add(tf.multiply(Y, tf.sqrt(y_variance)), y_mean) 
+# The prediction that has been reverted from the standardization I did for training the data.
+# This is the tensor object you want to run through the session to get normal predictions.
+adjusted_pred = tf.add(tf.multiply(pred, tf.sqrt(y_variance)), y_mean) 
 
 pow_val = tf.pow(tf.subtract(pred, Y),2)
-
 cost = tf.reduce_mean(pow_val)
 
 ss_e = tf.reduce_sum(tf.pow(tf.subtract(Y, pred), 2))
@@ -130,20 +129,19 @@ if is_adjusted:
     ss_t = tf.reduce_sum(tf.pow(tf.subtract(Y_init, y_mean), 2))
 r2 = tf.subtract(1.0, tf.div(ss_e, ss_t))
 
+# This is the adjusted R^2 formula not to be confused with term adjusted that I am using with other variables to signify values
+# that have been reverted from their standardized forms.
 adjusted_r2 = tf.subtract(1.0, tf.div(tf.div(ss_e, (n_samples - 1.0)), tf.div(ss_t, (n_samples - num_features - 1)) ) )
 
 optimizer = tf.train.AdamOptimizer(1e-1).minimize(cost)
 
 init = tf.global_variables_initializer()
 
-saver = tf.train.Saver()
 if is_verbose:
     print("initialize sessions")
 sess = tf.Session()
 
 sess.run(init)
-
-import math
 
 loss_values = []
 if is_verbose:
