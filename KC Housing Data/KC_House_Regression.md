@@ -330,4 +330,4 @@ sess.close()
     RMSE difference: 0.3254762887954712
 
 
-So it looks like our model is not as good at predicting values for the test data set, which indicates we are likely overfitting. However, this is pretty good for a simple model.
+So it looks like our model is not as good at predicting values for the test data set, which indicates we are likely overfitting. However, this is a pretty good start for a simple model.
