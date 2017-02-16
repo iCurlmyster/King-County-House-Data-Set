@@ -1,4 +1,4 @@
-To view a more formal walkthrough of my program and the data you can view my markdown file [here](https://github.com/iCurlmyster/King-County-House-Data-Set/blob/master/KC%20Housing%20Data/KC_House_Regression.md) or you can view the jupyter notebook I have posted on my Kaggle account [here](https://www.kaggle.com/icurlmyster/d/harlfoxem/housesalesprediction/simple-mlr-model). The original data set can be found [here](https://www.kaggle.com/harlfoxem/housesalesprediction).
+To view a more formal walkthrough of my program and the data you can view the [python notebook](https://github.com/iCurlmyster/King-County-House-Data-Set/blob/master/KC_House_Regression.ipynb) or you can view the notebook on my [Kaggle account](https://www.kaggle.com/icurlmyster/d/harlfoxem/housesalesprediction/simple-mlr-model). The original data set can be found [here](https://www.kaggle.com/harlfoxem/housesalesprediction).
 
 
 ### Running the program
