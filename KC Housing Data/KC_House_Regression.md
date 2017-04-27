@@ -16,7 +16,7 @@ Next we set our seeds and read in the data.
 
 ```python
 np.random.seed(7)
-tf.set_random_seed(7)
+#tf.set_random_seed(7)
 init_data = pd.read_csv("./kc_house_data.csv")
 print("Col: {0}".format(list(init_data)))
 ```
@@ -136,6 +136,23 @@ def split_data(data, ratio):
 train_set, test_set = split_data(init_data, 0.2)
 ```
 
+We need to grab the mean and standard deviation of the training set to standardize our input data for the model later.
+
+
+```python
+mean_offset = train_set.mean()
+stddev_offset = train_set.std()
+mean_xOffset = (mean_offset.drop("price")).values
+stddev_xOffset = (stddev_offset.drop("price")).values
+mean_yOffset = np.array([mean_offset["price"].copy()])
+stddev_yOffset = np.array([stddev_offset["price"].copy()])
+
+mean_xOffset = mean_xOffset.reshape(1, mean_xOffset.shape[0])
+stddev_xOffset = stddev_xOffset.reshape(1, stddev_xOffset.shape[0])
+mean_yOffset = mean_yOffset.reshape(1, mean_yOffset.shape[0])
+stddev_yOffset = stddev_yOffset.reshape(1, stddev_yOffset.shape[0])
+```
+
 We need to split our training set into the data and its labels for our model. 
 
 
@@ -167,23 +184,16 @@ Next what we are going to do is standardize our input data so that any possible 
 
 
 ```python
-## calculate mean on the column axis for each column. and I am keeping its deminsions
-x_mean = tf.reduce_mean(X_init, 0, True)
-y_mean = tf.reduce_mean(Y_init, 0, True)
+##  Grab the mean and stddev values we took from the training set earlier
+x_mean = tf.constant(mean_xOffset, dtype=tf.float32)
+y_mean = tf.constant(mean_yOffset, dtype=tf.float32)
 
-## Making the input have a mean of 0
-X_mz = tf.subtract(X_init, x_mean)
-Y_mz = tf.subtract(Y_init, y_mean)
+x_stddev = tf.constant(stddev_xOffset, dtype=tf.float32)
+y_stddev = tf.constant(stddev_yOffset, dtype=tf.float32)
 
-## changing int value to float32 
-n_samples = tf.constant(n_samples, dtype=tf.float32)
-
-x_variance = tf.div(tf.reduce_sum(tf.pow(tf.subtract(X_mz, x_mean), 2), 0, True), tf.subtract(n_samples, 1.0))
-y_variance = tf.div(tf.reduce_sum(tf.pow(tf.subtract(Y_mz, y_mean), 2), 0, True), tf.subtract(n_samples, 1.0))
-
-## Making the input have a variance of 1
-X = tf.div(X_mz, tf.sqrt(x_variance))
-Y = tf.div(Y_mz, tf.sqrt(y_variance))
+## Making the input have a mean of 0 and a stddev of 1
+X = tf.div(tf.subtract(X_init, x_mean), x_stddev)
+Y = tf.div(tf.subtract(Y_init, y_mean), y_stddev)
 ```
 
 With all of that taken care of we can define the prediction function.
@@ -270,7 +280,7 @@ plt.plot(cost_values);
 ```
 
 
-![png](output_39_0.png)
+![png](output_41_0.png)
 
 
 To see how well we did, we need to compute the $R^2$ to see how well our model explains the data, the Root Mean Squared Error(RMSE) to tell us standard deviation of our predicted values vs. the actual values, and the Adjusted $R^2$ function to make sure the regular $R^2$ function is not being influenced by the high number of features we have in our model. The R^2 formula that I am using is $R^2 = 1 - \frac{SS_{res}}{SS_{tot}}$

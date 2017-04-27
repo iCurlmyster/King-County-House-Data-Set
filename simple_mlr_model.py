@@ -65,6 +65,19 @@ def split_data(data, ratio):
 # get our sets; test set is 20% of data
 train_set, test_set = split_data(init_data, 0.2)
 
+# Grab the mean and stddev for us to standardize in the model
+mean_offset = train_set.mean()
+stddev_offset = train_set.std()
+mean_xOffset = (mean_offset.drop("price")).values
+stddev_xOffset = (stddev_offset.drop("price")).values
+mean_yOffset = np.array([mean_offset["price"].copy()])
+stddev_yOffset = np.array([stddev_offset["price"].copy()])
+
+mean_xOffset = mean_xOffset.reshape(1, mean_xOffset.shape[0])
+stddev_xOffset = stddev_xOffset.reshape(1, stddev_xOffset.shape[0])
+mean_yOffset = mean_yOffset.reshape(1, mean_yOffset.shape[0])
+stddev_yOffset = stddev_yOffset.reshape(1, stddev_yOffset.shape[0])
+
 if do_plot:
     ## use pandas scatter matrix plot to get a better idea of data
     from pandas.tools.plotting import scatter_matrix    
@@ -90,25 +103,16 @@ n_samples = data.shape[0]
 X_init = tf.placeholder(tf.float32, [None, num_features])
 Y_init = tf.placeholder(tf.float32, [None, 1])
 
-## calculate mean on the column axis for each column. and I am keeping its deminsions
-x_mean = tf.reduce_mean(X_init, 0, True)
-y_mean = tf.reduce_mean(Y_init, 0, True)
+##  Grab the mean and stddev values we took from the training set earlier
+x_mean = tf.constant(mean_xOffset, dtype=tf.float32)
+y_mean = tf.constant(mean_yOffset, dtype=tf.float32)
 
-## Making the input have a mean of 0.
-## This is elementwise so it will perform on the correct columns for each row.
-X_mz = tf.subtract(X_init, x_mean)
-Y_mz = tf.subtract(Y_init, y_mean)
+x_stddev = tf.constant(stddev_xOffset, dtype=tf.float32)
+y_stddev = tf.constant(stddev_yOffset, dtype=tf.float32)
 
-# convert to tensor float type
-n_samples = tf.constant(n_samples, dtype=tf.float32)
-
-## calculate variance. tf.div performs elementwise. also reduce_sum on column axis and keeping deminsions
-x_variance = tf.div(tf.reduce_sum(tf.pow(tf.subtract(X_mz, x_mean), 2), 0, True), tf.subtract(n_samples, 1.0))
-y_variance = tf.div(tf.reduce_sum(tf.pow(tf.subtract(Y_mz, y_mean), 2), 0, True), tf.subtract(n_samples, 1.0))
-
-## Making the input have a variance of 1
-X = tf.div(X_mz, tf.sqrt(x_variance))
-Y = tf.div(Y_mz, tf.sqrt(y_variance))
+## Making the input have a mean of 0 and a stddev of 1
+X = tf.div(tf.subtract(X_init, x_mean), x_stddev)
+Y = tf.div(tf.subtract(Y_init, y_mean), y_stddev)
 
 W = tf.Variable(tf.random_normal([num_features,1]))
 b = tf.Variable(tf.random_normal([1]))
@@ -120,7 +124,7 @@ pred = tf.add(tf.matmul(X,W), b)
 adjusted_pred = tf.add(tf.multiply(pred, tf.sqrt(y_variance)), y_mean) 
 
 pow_val = tf.pow(tf.subtract(pred, Y),2)
-cost = tf.reduce_mean(pow_val)
+cost = tf.reduce_mean(pow_val) 
 
 ss_e = tf.reduce_sum(tf.pow(tf.subtract(Y, pred), 2))
 ss_t = tf.reduce_sum(tf.pow(tf.subtract(Y, 0), 2))
