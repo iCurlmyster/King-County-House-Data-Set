@@ -1,14 +1,11 @@
 
-# Exploring King County, USA Housing Data
-
-In this notebook we will be exploring the King County, USA Housing data set and seeing how well we can get a simple multiple linear regression model to predict the housing prices. The data set can be found [here](https://www.kaggle.com/harlfoxem/housesalesprediction). To tackle this problem we will be using the tensorflow, pandas, and numpy libraries. We are also using sys for outputing results.
+In this notebook we will be exploring the King County, USA Housing data set and seeing how well we can get a simple multiple linear regression model to predict the housing prices.  To tackle this problem we will be using the tensorflow, pandas, and numpy libraries.
 
 
 ```python
 import tensorflow as tf
 import pandas as pd
 import numpy as np
-import sys
 ```
 
 Next we set our seeds and read in the data.
@@ -16,8 +13,8 @@ Next we set our seeds and read in the data.
 
 ```python
 np.random.seed(7)
-#tf.set_random_seed(7)
-init_data = pd.read_csv("./kc_house_data.csv")
+tf.set_random_seed(7)
+init_data = pd.read_csv("../input/kc_house_data.csv")
 print("Col: {0}".format(list(init_data)))
 ```
 
@@ -117,7 +114,7 @@ scatter_matrix(init_data[attr], figsize=(20,8) );
 ```
 
 
-![png](output_14_0.png)
+![png](output_13_0.png)
 
 
 As we can see, it seems there are some possible outliers to worry about. So what we will do is standardize the data when we create our model so that we won't have to worry about this possible problem as much.
@@ -227,7 +224,7 @@ sess = tf.Session()
 sess.run(init)
 ```
 
-We are going to define our for loop to iterate through 1000 epochs. We will also make it output our cost results as we are training.
+We are going to define our for loop to iterate through 1000 epochs. We will also store our cost results to graph.
 
 
 ```python
@@ -236,11 +233,7 @@ num_epochs = 1000
 for epoch in range(num_epochs): 
     _, c = sess.run([optimizer, cost], feed_dict={X_init:data, Y_init:data_labels})
     cost_values.append(c)
-    sys.stdout.write("Epoch: {0}/{1} cost: {2}\r".format(epoch+1, num_epochs, c))
-    sys.stdout.flush()
 ```
-
-    Epoch: 1000/1000 cost: 0.09528902173042297
 
 Just to see how our model looks lets print out the final cost, weights, and bias.
 
@@ -250,26 +243,26 @@ training = sess.run(cost, feed_dict={X_init:data, Y_init:data_labels})
 print("Final cost: {0} final weights: {1} final biases: {2}".format(training, sess.run(W), sess.run(b)) )
 ```
 
-    Final cost: 0.09528900682926178 final weights: [[ -1.75047040e-01]
-     [  1.35560110e-01]
-     [ -1.83145076e-01]
-     [  4.92969854e-03]
-     [  2.11512167e-02]
-     [  8.05953667e-02]
-     [  5.93550354e-02]
-     [  1.67232260e-01]
-     [  1.13751483e+00]
-     [  6.94299519e-01]
-     [  1.67059988e-01]
-     [ -7.53135633e+00]
-     [  1.60112567e-02]
-     [  4.02089386e+01]
-     [ -2.04553337e+01]
-     [  9.88035724e-02]
-     [ -1.64874736e-02]] final biases: [-0.00018113]
+    Final cost: 0.3008064031600952 final weights: [[-0.08289298]
+     [ 0.08201667]
+     [-0.1147991 ]
+     [ 0.00873815]
+     [ 0.01180041]
+     [ 0.14265192]
+     [ 0.10099796]
+     [ 0.05620537]
+     [ 0.30636245]
+     [ 0.50391531]
+     [ 0.23961949]
+     [-0.19724593]
+     [ 0.02820019]
+     [ 0.21111344]
+     [-0.04459605]
+     [ 0.05780244]
+     [-0.02599087]] final biases: [ -1.62391223e-06]
 
 
-Lets also look at our cost function values graphically.
+Lets also look at our cost function values.
 
 
 ```python
@@ -280,10 +273,10 @@ plt.plot(cost_values);
 ```
 
 
-![png](output_41_0.png)
+![png](output_40_0.png)
 
 
-To see how well we did, we need to compute the $R^2$ to see how well our model explains the data, the Root Mean Squared Error(RMSE) to tell us standard deviation of our predicted values vs. the actual values, and the Adjusted $R^2$ function to make sure the regular $R^2$ function is not being influenced by the high number of features we have in our model. The R^2 formula that I am using is $R^2 = 1 - \frac{SS_{res}}{SS_{tot}}$
+To see how well we did, we need to compute the R^2 to see how well our model explains the data, the Root Mean Squared Error(RMSE) to tell us standard deviation of our predicted values vs. the actual values, and the Adjusted R^2 function to make sure the regular R^2 function is not being influenced by the high number of features we have in our model.
 
 
 ```python
@@ -296,7 +289,7 @@ r2 = tf.subtract(1.0, tf.div(ss_e, ss_t))
 adjusted_r2 = tf.subtract(1.0, tf.div(tf.div(ss_e, (n_samples - 1.0)), tf.div(ss_t, (n_samples - num_features - 1)) ) )
 ```
 
-Now we grab all of the predictions and all of the standardized Y values. Then we compute the $R^2$, Adjusted $R^2$, and RMSE on our data.
+Now we grab all of the predictions and all of the standardized Y values. Then we compute the R^2, Adjusted R^2, and RMSE on our data.
 
 
 ```python
@@ -309,12 +302,12 @@ print("R^2 value: {0}".format(sess.run(r2,feed_dict={X_init:data, Y_init:data_la
 print("Adjusted R^2 value: {0}".format(sess.run(adjusted_r2, feed_dict={X_init:data, Y_init:data_labels})))
 ```
 
-    rmse of pred_data and std_y_data is: 0.3086892366409302
-    R^2 value: 0.6991616487503052
-    Adjusted R^2 value: 0.6994574069976807
+    rmse of pred_data and std_y_data is: 0.5484583973884583
+    R^2 value: 0.6991763114929199
+    Adjusted R^2 value: 0.6994720697402954
 
 
-As we can see we have a RMSE of ~0.31, $R^2$ of ~0.70, and Adjusted $R^2$ of ~0.70 with our simple multiple linear regression model. 
+As we can see we have a RMSE of ~0.55, $R^2$ of ~0.70, and Adjusted $R^2$ of ~0.70 with our simple multiple linear regression model. 
 
 Now lets see how well our model can predict our test data by comparing RMSE values.
 
@@ -335,9 +328,9 @@ print("RMSE difference: {0}".format(rmse_test - rmse_train))
 sess.close()
 ```
 
-    RMSE for Training data is: 0.3086892366409302
-    RMSE for Test data is: 0.6341655254364014
-    RMSE difference: 0.3254762887954712
+    RMSE for Training data is: 0.5484583973884583
+    RMSE for Test data is: 0.5595935583114624
+    RMSE difference: 0.01113516092300415
 
 
-So it looks like our model is not as good at predicting values for the test data set, which indicates we are likely overfitting. However, this is a pretty good start for a simple model.
+It seems that our model has a similar outcome for our test data as our training data with only a difference of ~0.01 with the RMSE values. So for a simple model this seems to be a good start.
